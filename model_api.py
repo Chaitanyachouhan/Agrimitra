@@ -138,15 +138,15 @@ DEFAULT_MODEL_CANDIDATES = [
     os.environ.get("MODEL_PATH"),
     os.path.join(os.path.dirname(__file__), "..", "models", "plant_disease_model_full.h5"),
     os.path.join(os.path.dirname(__file__), "..", "models", "plant_disease_model.h5"),
-    r"C:\Users\Sahil Kumar\Desktop\Crop\plant_disease_model.h5",
-    r"C:\Users\Sahil Kumar\Desktop\Crop\plant_disease_model_full.h5",
+    r"D:\crops\plant_disease_model.h5",
+    r"D:\crops\plant_disease_model.h5",
 ]
 
 DEFAULT_LABEL_CANDIDATES = [
     os.environ.get("LABELS_PATH"),
     os.path.join(os.path.dirname(__file__), "..", "models", "label_map.json"),
     os.path.join(os.path.dirname(__file__), "..", "label_map.json"),
-    r"C:\Users\Sahil Kumar\Desktop\Crop\label_map.json",
+    r"D:\crops\label_map.json",
 ]
 
 IMG_SIZE = (224, 224)
