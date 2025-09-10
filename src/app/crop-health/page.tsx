@@ -1,7 +1,7 @@
-
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 
 import { useFarm } from "@/contexts/farm-context";
 import {
@@ -24,6 +24,27 @@ const FieldMap = dynamic(
 
 export default function CropHealthPage() {
   const { selectedFarm } = useFarm();
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!selectedFarm?.center) return;
+
+    // Destructure the tuple to get latitude and longitude
+    const [lat, lon] = selectedFarm.center;
+
+    fetch(`/api/ndvi?lat=${lat}&lon=${lon}`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(console.error);
+  }, [selectedFarm]);
+
+  if (!data) {
+    return (
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <p>Loading NDVI...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -45,20 +66,38 @@ export default function CropHealthPage() {
           </CardContent>
         </Card>
         <Card>
-            <CardHeader>
-                <CardTitle>NDVI Legend</CardTitle>
-                <CardDescription>
-                    This map visualizes the Normalized Difference Vegetation Index (NDVI). Higher values (greener) indicate healthier, denser vegetation.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <div className="h-4 w-full rounded-full bg-gradient-to-r from-red-600 via-yellow-400 to-green-600"></div>
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Low Health (Stress)</span>
-                     <span>Moderate Health</span>
-                    <span>High Health (Vigorous)</span>
-                </div>
-            </CardContent>
+          <CardHeader>
+            <CardTitle>NDVI Analysis</CardTitle>
+            <CardDescription>
+              Mean NDVI: {data.ndviValue?.toFixed(3)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <img
+              src={data.mapUrl
+                .replace("{z}", "10")
+                .replace("{x}", "548")
+                .replace("{y}", "334")}
+              alt="NDVI Map"
+              className="rounded-lg shadow-lg"
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>NDVI Legend</CardTitle>
+            <CardDescription>
+              This map visualizes the Normalized Difference Vegetation Index (NDVI). Higher values (greener) indicate healthier, denser vegetation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-4 w-full rounded-full bg-gradient-to-r from-red-600 via-yellow-400 to-green-600"></div>
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>Low Health (Stress)</span>
+              <span>Moderate Health</span>
+              <span>High Health (Vigorous)</span>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </main>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useFarm } from '@/contexts/farm-context';
+
+// Add this interface to define the expected data structure
+interface NdviData {
+  ndviValue: number;
+  mapUrl: string;
+}
 
 const QUICK_LINKS = [
   {
@@ -65,15 +72,41 @@ const QUICK_LINKS = [
 ];
 
 const weatherForecast = [
-  {day: 'Tomorrow', temp: '30°C', condition: 'Sunny', icon: Sun},
-  {day: 'Wednesday', temp: '31°C', condition: 'Partly Cloudy', icon: CloudSun},
-  {day: 'Thursday', temp: '28°C', condition: 'Light Rain', icon: CloudDrizzle},
-  {day: 'Friday', temp: '27°C', condition: 'Rain', icon: CloudRain},
-  {day: 'Saturday', temp: '29°C', condition: 'Cloudy', icon: Cloud},
+  { day: 'Tomorrow', temp: '30°C', condition: 'Sunny', icon: Sun },
+  { day: 'Wednesday', temp: '31°C', condition: 'Partly Cloudy', icon: CloudSun },
+  { day: 'Thursday', temp: '28°C', condition: 'Light Rain', icon: CloudDrizzle },
+  { day: 'Friday', temp: '27°C', condition: 'Rain', icon: CloudRain },
+  { day: 'Saturday', temp: '29°C', condition: 'Cloudy', icon: Cloud },
 ];
 
 export default function Dashboard() {
-  const {selectedFarm} = useFarm();
+  const { selectedFarm } = useFarm();
+  // Modify the useState hook to accept either NdviData or null
+  const [data, setData] = useState<NdviData | null>(null);
+
+  useEffect(() => {
+    if (!selectedFarm?.center) return;
+
+    const [lat, lon] = selectedFarm.center;
+
+    fetch(`/api/ndvi?lat=${lat}&lon=${lon}`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data: NdviData) => {
+        if (!data || !data.ndviValue || !data.mapUrl) {
+          throw new Error('Invalid NDVI data received');
+        }
+        setData(data);
+      })
+      .catch((err) => {
+        console.error('Error fetching NDVI data:', err);
+        setData(null); // Ensure `data` is set to null on error
+      });
+  }, [selectedFarm]);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -171,7 +204,7 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {weatherForecast.map(day => (
+                {weatherForecast.map((day) => (
                   <div
                     key={day.day}
                     className="flex flex-col items-center gap-2 rounded-lg border bg-card p-4 text-center"
@@ -216,7 +249,7 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedFarm.crops.slice(0, 3).map(crop => (
+                    {selectedFarm.crops.slice(0, 3).map((crop) => (
                       <TableRow key={crop.name}>
                         <TableCell>
                           <div className="font-medium">{crop.name}</div>
@@ -265,25 +298,25 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-          {QUICK_LINKS.map(link => (
-            <Link href={link.href} key={link.title} className="flex">
-              <Card className="flex flex-col w-full hover:bg-muted/50 transition-colors">
-                <CardHeader>
-                  <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <link.icon className="size-6" />
-                  </div>
-                  <CardTitle>{link.title}</CardTitle>
-                  <CardDescription>{link.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="mt-auto">
-                  <div className="flex items-center text-sm font-medium text-primary">
-                    Go to feature <ArrowUpRight className="ml-2 h-4 w-4" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4">🌱 NDVI Analysis</h2>
+          {data?.ndviValue ? (
+            <p className="mb-2">Mean NDVI: {data.ndviValue.toFixed(3)}</p>
+          ) : (
+            <p className="mb-2">NDVI data unavailable.</p>
+          )}
+          {data?.mapUrl ? (
+            <img
+              src={data.mapUrl
+                .replace("{z}", "10")
+                .replace("{x}", "548")
+                .replace("{y}", "334")}
+              alt="NDVI Map"
+              className="rounded-lg shadow-lg"
+            />
+          ) : (
+            <p>Error: Unable to load NDVI data.</p>
+          )}
         </div>
       </div>
     </main>
